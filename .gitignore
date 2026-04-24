@@ -3,6 +3,5 @@ media/
 uploads/
 __pycache__/
 *.pyc
-env/
 venv/
 myenv/
