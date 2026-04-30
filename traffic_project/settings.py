@@ -40,6 +40,8 @@ INSTALLED_APPS = [
     "traffic_app",
 ]
 
+ALLOWED_HOSTS = ['*']
+
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
