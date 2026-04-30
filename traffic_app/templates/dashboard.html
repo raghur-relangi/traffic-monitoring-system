@@ -1,113 +1,666 @@
     {% load static %}
 
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Traffic Dashboard</title>
 
-    <!-- Bootstrap -->
+    <!-- Bootstrap 5 -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-
-    <!-- Custom CSS -->
-    <link rel="stylesheet" href="{% static 'css/style.css' %}">
-
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-</head>
 
+    <style>
+        /* ===== CSS VARIABLES ===== */
+        :root {
+            --bg-dark: #050d1a;
+            --bg-nav: #0a1628;
+            --neon-cyan: #00d4ff;
+            --neon-indigo: #6366f1;
+            --neon-green: #10b981;
+            --neon-amber: #f59e0b;
+            --neon-red: #ef4444;
+            --text-primary: #e2e8f0;
+            --text-muted: #94a3b8;
+            --glass-bg: rgba(255, 255, 255, 0.05);
+            --border-color: rgba(99, 102, 241, 0.3);
+        }
+
+        /* ===== GLOBAL RESET ===== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* ===== ANIMATED DOT-GRID PATTERN ===== */
+        .bg-pattern {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                radial-gradient(circle at 1px 1px, rgba(0, 212, 255, 0.12) 1px, transparent 0);
+            background-size: 35px 35px;
+            pointer-events: none;
+            z-index: 0;
+            animation: dotPulse 4s ease-in-out infinite;
+        }
+
+        @keyframes dotPulse {
+            0%, 100% { opacity: 0.6; }
+            50% { opacity: 1; }
+        }
+
+        /* ===== NAVBAR ===== */
+        .navbar {
+            background-color: var(--bg-nav) !important;
+            border-left: 3px solid var(--neon-cyan);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.4);
+            padding: 0.75rem 0;
+            position: relative;
+            z-index: 100;
+        }
+
+        .navbar::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 1px;
+            background: linear-gradient(90deg, var(--neon-cyan), var(--neon-indigo), transparent);
+        }
+
+        .navbar-brand {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--text-primary) !important;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .logo-glow {
+            width: 42px;
+            height: 42px;
+            background: linear-gradient(135deg, var(--neon-cyan), var(--neon-indigo));
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 25px rgba(0, 212, 255, 0.5);
+            animation: logoPulse 2s ease-in-out infinite;
+            font-size: 1.3rem;
+        }
+
+        @keyframes logoPulse {
+            0%, 100% { box-shadow: 0 0 25px rgba(0, 212, 255, 0.5); }
+            50% { box-shadow: 0 0 40px rgba(0, 212, 255, 0.8); }
+        }
+
+        .live-clock {
+            font-size: 0.9rem;
+            color: var(--neon-cyan);
+            font-weight: 600;
+            font-family: 'Courier New', monospace;
+        }
+
+        /* ===== MAIN CONTENT ===== */
+        .main-content {
+            position: relative;
+            z-index: 1;
+            padding: 2rem 0 4rem;
+        }
+
+        /* ===== STAT CARDS ===== */
+        .stat-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 1.5rem;
+            height: 100%;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+        }
+
+        .stat-card.blue::before { background: var(--neon-cyan); }
+        .stat-card.green::before { background: var(--neon-green); }
+        .stat-card.amber::before { background: var(--neon-amber); }
+        .stat-card.cyan::before { background: var(--neon-cyan); }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
+        }
+
+        .stat-card.blue:hover { border-color: rgba(0, 212, 255, 0.5); }
+        .stat-card.green:hover { border-color: rgba(16, 185, 129, 0.5); }
+        .stat-card.amber:hover { border-color: rgba(245, 158, 11, 0.5); }
+        .stat-card.cyan:hover { border-color: rgba(0, 212, 255, 0.5); }
+
+        .stat-icon {
+            width: 55px;
+            height: 55px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1rem;
+            font-size: 1.4rem;
+        }
+
+        .stat-card.blue .stat-icon {
+            background: rgba(0, 212, 255, 0.15);
+            color: var(--neon-cyan);
+            border: 1px solid rgba(0, 212, 255, 0.3);
+        }
+
+        .stat-card.green .stat-icon {
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--neon-green);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
+        .stat-card.amber .stat-icon {
+            background: rgba(245, 158, 11, 0.15);
+            color: var(--neon-amber);
+            border: 1px solid rgba(245, 158, 11, 0.3);
+        }
+
+        .stat-card.cyan .stat-icon {
+            background: rgba(0, 212, 255, 0.15);
+            color: var(--neon-cyan);
+            border: 1px solid rgba(0, 212, 255, 0.3);
+        }
+
+        .stat-label {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: var(--text-primary);
+            line-height: 1;
+        }
+
+        .stat-card.blue .stat-value { color: var(--neon-cyan); }
+        .stat-card.green .stat-value { color: var(--neon-green); }
+        .stat-card.amber .stat-value { color: var(--neon-amber); }
+        .stat-card.cyan .stat-value { color: var(--neon-cyan); }
+
+        /* ===== ANOMALY STATUS DOT ===== */
+        .status-dot {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 0.5rem;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        .status-normal {
+            background: var(--neon-green);
+            box-shadow: 0 0 15px var(--neon-green);
+        }
+
+        .status-detected {
+            background: var(--neon-red);
+            box-shadow: 0 0 15px var(--neon-red);
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.7; transform: scale(1.2); }
+        }
+
+        /* ===== ANOMALY ALERT BANNER ===== */
+        .alert-banner {
+            background: rgba(239, 68, 68, 0.15);
+            border: 1px solid var(--neon-red);
+            border-radius: 12px;
+            padding: 1rem 1.5rem;
+            margin-bottom: 2rem;
+            display: flex;
+            align-items: center;
+            animation: alertPulse 2s ease-in-out infinite;
+        }
+
+        @keyframes alertPulse {
+            0%, 100% { box-shadow: 0 0 0 rgba(239, 68, 68, 0); }
+            50% { box-shadow: 0 0 20px rgba(239, 68, 68, 0.3); }
+        }
+
+        .alert-banner i {
+            color: var(--neon-red);
+            font-size: 1.5rem;
+            margin-right: 1rem;
+        }
+
+        .alert-banner span {
+            color: var(--neon-red);
+            font-weight: 600;
+        }
+
+        /* ===== CHART CARD ===== */
+        .chart-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 2rem;
+            margin-top: 2rem;
+        }
+
+        .chart-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            padding-left: 1rem;
+            border-left: 3px solid var(--neon-cyan);
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+            background: rgba(10, 22, 40, 0.5);
+            border-radius: 12px;
+            padding: 1rem;
+        }
+
+        /* ===== CHART TOGGLE BUTTON ===== */
+        .chart-toggle {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .toggle-btn {
+            background: var(--glass-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-muted);
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .toggle-btn:hover, .toggle-btn.active {
+            border-color: var(--neon-cyan);
+            color: var(--neon-cyan);
+            background: rgba(0, 212, 255, 0.1);
+        }
+
+        /* ===== UPLOAD BUTTON ===== */
+        .btn-upload {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            background: linear-gradient(135deg, var(--neon-cyan), var(--neon-indigo));
+            border: none;
+            padding: 1rem 2.5rem;
+            font-size: 1rem;
+            font-weight: 700;
+            border-radius: 50px;
+            color: white;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 20px rgba(0, 212, 255, 0.3);
+            margin-top: 2rem;
+        }
+
+        .btn-upload:hover {
+            transform: scale(1.05);
+            box-shadow: 0 8px 35px rgba(0, 212, 255, 0.5);
+            color: white;
+        }
+
+        .btn-upload i {
+            font-size: 1.1rem;
+        }
+
+        /* ===== FOOTER ===== */
+        .site-footer {
+            background-color: var(--bg-nav);
+            padding: 1.5rem 0;
+            border-top: 1px solid var(--border-color);
+            text-align: center;
+            margin-top: 3rem;
+        }
+
+        .site-footer p {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            margin: 0;
+        }
+
+        .site-footer .powered-by {
+            color: var(--neon-indigo);
+            font-weight: 600;
+        }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 768px) {
+            .stat-value {
+                font-size: 2rem;
+            }
+            
+            .chart-container {
+                height: 250px;
+            }
+        }
+    </style>
+</head>
 <body>
 
-<!-- NAVBAR -->
-<nav class="navbar navbar-dark bg-dark">
-    <div class="container">
-        <span class="navbar-brand">📊 Traffic Dashboard</span>
-    </div>
-</nav>
+    <!-- BACKGROUND PATTERN -->
+    <div class="bg-pattern"></div>
 
-<div class="container mt-5">
+    <!-- NAVBAR -->
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container">
+            <a class="navbar-brand" href="#">
+                <div class="logo-glow">🚦</div>
+                <span>Traffic Dashboard</span>
+            </a>
+            <div class="d-flex align-items-center">
+                <div class="live-clock" id="liveClock">
+                    <i class="bi bi-clock me-2"></i><span id="clockTime">00:00:00</span>
+                </div>
+            </div>
+        </div>
+    </nav>
 
-    <div class="row">
+    <!-- MAIN CONTENT -->
+    <div class="container main-content">
+        
+        <!-- ANOMALY ALERT BANNER -->
+        {% if anomaly %}
+        <div class="alert-banner">
+            <i class="bi bi-exclamation-triangle-fill"></i>
+            <span>⚠️ Anomaly Detected in Traffic! Immediate attention required.</span>
+        </div>
+        {% endif %}
 
-        <!-- VEHICLE COUNT -->
-        <div class="col-md-6 mb-3">
-            <div class="dashboard-box vehicle-box">
-                <h4>🚗 Vehicle Count</h4>
-                <h2 id="vehicleCount">
-                    {{ count|default:0 }}
-                </h2>
+        <!-- STATS ROW -->
+        <div class="row g-4">
+            <!-- VEHICLE COUNT -->
+            <div class="col-md-6 col-lg-3">
+                <div class="stat-card blue">
+                    <div class="stat-icon">
+                        <i class="bi bi-car-front-fill"></i>
+                    </div>
+                    <div class="stat-label">🚗 Vehicle Count</div>
+                    <div class="stat-value" id="vehicleCount">{{ count|default:0 }}</div>
+                </div>
+            </div>
+
+            <!-- ANOMALY STATUS -->
+            <div class="col-md-6 col-lg-3">
+                <div class="stat-card green">
+                    <div class="stat-icon">
+                        <i class="bi bi-exclamation-triangle-fill"></i>
+                    </div>
+                    <div class="stat-label">⚠️ Anomaly Status</div>
+                    <div class="stat-value" style="font-size: 1.5rem;">
+                        {% if anomaly %}
+                            <span class="status-dot status-detected"></span>Detected
+                        {% else %}
+                            <span class="status-dot status-normal"></span>Normal
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- AVG SPEED -->
+            <div class="col-md-6 col-lg-3">
+                <div class="stat-card amber">
+                    <div class="stat-icon">
+                        <i class="bi bi-speedometer2"></i>
+                    </div>
+                    <div class="stat-label">📊 Avg Speed</div>
+                    <div class="stat-value">45<span style="font-size: 1rem;">km/h</span></div>
+                </div>
+            </div>
+
+            <!-- PROCESSING TIME -->
+            <div class="col-md-6 col-lg-3">
+                <div class="stat-card cyan">
+                    <div class="stat-icon">
+                        <i class="bi bi-clock-fill"></i>
+                    </div>
+                    <div class="stat-label">⏱️ Processing Time</div>
+                    <div class="stat-value">2.4<span style="font-size: 1rem;">s</span></div>
+                </div>
             </div>
         </div>
 
-        <!-- ANOMALY STATUS -->
-        <div class="col-md-6 mb-3">
-            <div class="dashboard-box anomaly-box">
-                <h4>⚠️ Anomaly Status</h4>
-
-                {% if anomaly %}
-                    <h2 id="anomalyText">Detected</h2>
-                {% else %}
-                    <h2 id="anomalyText">Normal</h2>
-                {% endif %}
-
+        <!-- CHART SECTION -->
+        <div class="chart-card">
+            <div class="chart-title">
+                <i class="bi bi-bar-chart-fill me-2"></i>Traffic Analysis
+            </div>
+            
+            <!-- Chart Toggle -->
+            <div class="chart-toggle">
+                <button class="toggle-btn active" id="barBtn">
+                    <i class="bi bi-bar-chart-fill me-1"></i>Bar View
+                </button>
+                <button class="toggle-btn" id="lineBtn">
+                    <i class="bi bi-graph-up me-1"></i>Trend View
+                </button>
+            </div>
+            
+            <div class="chart-container">
+                <canvas id="trafficChart"></canvas>
             </div>
         </div>
 
+        <!-- BACK BUTTON -->
+        <div class="text-center">
+            <a href="{% url 'index' %}" class="btn-upload">
+                <i class="bi bi-cloud-upload-fill"></i>Upload Another Video
+            </a>
+        </div>
     </div>
 
-    <!-- CHART -->
-    <div class="card mt-4 p-4">
-        <h4>Traffic Analysis</h4>
-        <canvas id="trafficChart"></canvas>
-    </div>
+    <!-- FOOTER -->
+    <footer class="site-footer">
+        <div class="container">
+            <p>&copy; 2026 Traffic AI Monitoring System. All rights reserved.</p>
+            <p class="mt-2"><span class="powered-by">Powered by AI Engine v2.0</span></p>
+        </div>
+    </footer>
 
-    <!-- BACK BUTTON -->
-    <div class="text-center mt-4">
-        <a href="{% url 'index' %}" class="btn btn-secondary">
-            🔙 Upload Another Video
-        </a>
-    </div>
+    <!-- JS -->
+    <script src="{% static 'js/script.js' %}"></script>
 
-</div>
-
-<!-- JS -->
-<script src="{% static 'js/script.js' %}"></script>
-
-<!-- SAFE SCRIPT (NO ERRORS) -->
-<script>
-    document.addEventListener("DOMContentLoaded", function () {
-
-        // Get values safely
-        const count = parseInt("{{ count|default:0 }}");
-        const anomaly = "{{ anomaly|default:'False' }}";
-
-        // ===== ALERT =====
-        if (anomaly === "True") {
-            alert("⚠️ Anomaly Detected in Traffic!");
-        }
-
-        // ===== CHART =====
-        const ctx = document.getElementById('trafficChart');
-
-        if (ctx) {
-            new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: ['Vehicles'],
-                    datasets: [{
-                        label: 'Vehicle Count',
-                        data: [count]
-                    }]
-                }
+    <!-- LIVE CLOCK SCRIPT -->
+    <script>
+        function updateClock() {
+            const now = new Date();
+            const time = now.toLocaleTimeString('en-US', { 
+                hour12: false, 
+                hour: '2-digit', 
+                minute: '2-digit', 
+                second: '2-digit' 
             });
+            document.getElementById('clockTime').textContent = time;
         }
+        setInterval(updateClock, 1000);
+        updateClock();
+    </script>
 
-        // ===== AUTO REFRESH (OPTIONAL) =====
-        setTimeout(() => {
-            location.reload();
-        }, 15000); // 15 seconds
+    <!-- DASHBOARD SCRIPT -->
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
 
-    });
-</script>
+            // Get values safely
+            const count = parseInt("{{ count|default:0 }}");
+            const anomaly = "{{ anomaly|default:'False' }}";
+
+            // ===== COUNT-UP ANIMATION =====
+            const vehicleCountEl = document.getElementById('vehicleCount');
+            if (vehicleCountEl && count > 0) {
+                let currentCount = 0;
+                const increment = count / 50;
+                const timer = setInterval(() => {
+                    currentCount += increment;
+                    if (currentCount >= count) {
+                        currentCount = count;
+                        clearInterval(timer);
+                    }
+                    vehicleCountEl.textContent = Math.floor(currentCount);
+                }, 30);
+            }
+
+            // ===== ALERT =====
+            if (anomaly === "True") {
+                alert("⚠️ Anomaly Detected in Traffic!");
+            }
+
+            // ===== CHART =====
+            const ctx = document.getElementById('trafficChart');
+            let chartType = 'bar';
+            let trafficChart = null;
+
+            function createChart(type) {
+                const gradient = ctx.getContext('2d').createLinearGradient(0, 0, 0, 300);
+                gradient.addColorStop(0, '#00d4ff');
+                gradient.addColorStop(1, '#6366f1');
+
+                const config = {
+                    type: type,
+                    data: {
+                        labels: ['Vehicles'],
+                        datasets: [{
+                            label: 'Vehicle Count',
+                            data: [count],
+                            backgroundColor: type === 'line' ? 'rgba(0, 212, 255, 0.2)' : gradient,
+                            borderColor: '#00d4ff',
+                            borderWidth: 2,
+                            fill: type === 'line',
+                            tension: 0.4,
+                            pointBackgroundColor: '#00d4ff',
+                            pointBorderColor: '#fff',
+                            pointRadius: 6,
+                            pointHoverRadius: 8
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        animation: {
+                            duration: 1500,
+                            easing: 'easeOutQuart'
+                        },
+                        plugins: {
+                            legend: {
+                                display: true,
+                                labels: {
+                                    color: '#e2e8f0',
+                                    font: {
+                                        size: 14,
+                                        family: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif"
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                grid: {
+                                    color: 'rgba(99, 102, 241, 0.2)',
+                                    borderColor: 'rgba(99, 102, 241, 0.3)'
+                                },
+                                ticks: {
+                                    color: '#94a3b8'
+                                }
+                            },
+                            y: {
+                                beginAtZero: true,
+                                grid: {
+                                    color: 'rgba(99, 102, 241, 0.2)',
+                                    borderColor: 'rgba(99, 102, 241, 0.3)'
+                                },
+                                ticks: {
+                                    color: '#94a3b8'
+                                }
+                            }
+                        }
+                    }
+                };
+
+                if (trafficChart) {
+                    trafficChart.destroy();
+                }
+
+                trafficChart = new Chart(ctx, config);
+            }
+
+            if (ctx) {
+                createChart(chartType);
+            }
+
+            // ===== CHART TOGGLE =====
+            const barBtn = document.getElementById('barBtn');
+            const lineBtn = document.getElementById('lineBtn');
+
+            if (barBtn && lineBtn) {
+                barBtn.addEventListener('click', function() {
+                    chartType = 'bar';
+                    barBtn.classList.add('active');
+                    lineBtn.classList.remove('active');
+                    createChart(chartType);
+                });
+
+                lineBtn.addEventListener('click', function() {
+                    chartType = 'line';
+                    lineBtn.classList.add('active');
+                    barBtn.classList.remove('active');
+                    createChart(chartType);
+                });
+            }
+
+            // ===== AUTO REFRESH (OPTIONAL) =====
+            setTimeout(() => {
+                location.reload();
+            }, 15000); // 15 seconds
+
+        });
+    </script>
 
 </body>
 </html>
