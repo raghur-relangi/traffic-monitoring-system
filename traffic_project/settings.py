@@ -127,3 +127,5 @@ STATICFILES_DIRS = [
 # Media files (Uploads)
 MEDIA_URL = "media/"
 MEDIA_ROOT = BASE_DIR / "media"
+
+CSRF_TRUSTED_ORIGINS = ['https://traffic-monitoring-system-production-c13f.up.railway.app']
