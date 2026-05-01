@@ -6,13 +6,11 @@ from .models import TrafficData
 from .ai_model import detect_traffic
 
 
-# Home Page
 def index(request):
     form = VideoUploadForm()
     return render(request, 'index.html', {'form': form})
 
 
-# Video Analyze
 def analyze_video(request):
     if request.method == 'POST':
         form = VideoUploadForm(request.POST, request.FILES)
@@ -20,12 +18,11 @@ def analyze_video(request):
         if form.is_valid():
             obj = form.save()
 
-            video_path = obj.video.path
+            # Use file name instead of path (Railway has no persistent storage)
+            video_path = obj.video.name
 
-            # AI processing
             count, anomaly = detect_traffic(video_path)
 
-            # Save results
             obj.vehicle_count = count
             obj.anomaly_detected = anomaly
             obj.save()
